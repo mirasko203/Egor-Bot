@@ -1,5 +1,8 @@
-import telebot
-from telebot import types
+import telebot              # pyTelegramBotAPI — для Telegram-бота
+from telebot import types   # Для inline-кнопок и клавиатур
+import threading            # Чтобы запускать Telegram-бот и Flask одновременно
+from flask import Flask     # Мини-веб-сервер для Render
+import os
 
 TOKEN = '7772407762:AAHwJ0y5b-gcHZG6xd832_c2NyF98OY5m08'
 bot = telebot.telebot.TeleBot(TOKEN)
@@ -116,9 +119,9 @@ def callback(call):
 
 bot.polling(none_stop=True)
 
-import os
-from flask import Flask
-import threading
+# ----------------------------------------------------------------------
+#                 FLASK — ДЛЯ Render (чтобы не выключал бота)
+# ----------------------------------------------------------------------
 
 app = Flask(__name__)
 
@@ -127,9 +130,26 @@ def home():
     return "Bot is alive!"
 
 def run_flask():
+    # Render выдаёт порт через переменную PORT
     port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
 
-threading.Thread(target=run_flask, daemon=True).start()
+    # Запускаем БЫСТРЕЕ и ЧИЩЕ
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=False,
+        use_reloader=False
+    )
 
-print(f"Flask running on port {port}")
+# Сначала запускаем Flask, чтобы Render сразу увидел порт
+flask_thread = threading.Thread(target=run_flask)
+flask_thread.daemon = True
+flask_thread.start()
+
+# ----------------------------------------------------------------------
+#                 ЗАПУСК Telegram-бота
+# ----------------------------------------------------------------------
+bot_thread = threading.Thread(target=bot.infinity_polling)
+bot_thread.daemon = True
+bot_thread.start()
+
