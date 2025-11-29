@@ -1,6 +1,7 @@
 import telebot              # pyTelegramBotAPI — для Telegram-бота
 from telebot import types   # Для inline-кнопок и клавиатур
-import threading            # Чтобы запускать Telegram-бот и Flask одновременно
+import threading     # Чтобы запускать Telegram-бот и Flask одновременно
+import flask
 from flask import Flask     # Мини-веб-сервер для Render
 import os
 
@@ -152,4 +153,5 @@ flask_thread.start()
 bot_thread = threading.Thread(target=bot.infinity_polling)
 bot_thread.daemon = True
 bot_thread.start()
+
 
