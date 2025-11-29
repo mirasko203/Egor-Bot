@@ -124,15 +124,19 @@ def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
 
-home()
-run_flask()
+
 
 # ----------------- ЗАПУСК -----------------
 flask_thread = threading.Thread(target=run_flask)
 flask_thread.daemon = True
 flask_thread.start()
 
+home()
+run_flask()
+
 bot_thread = threading.Thread(target=bot.infinity_polling)
 bot_thread.daemon = True
 bot_thread.start()
+bot.infinity_polling()
+
 
