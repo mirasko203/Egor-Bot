@@ -4,6 +4,12 @@ import threading            # Чтобы запускать Telegram-бот и F
 from flask import Flask     # Мини-веб-сервер для Railway, чтобы процесс не убивался
 import os                   # Для получения порта Railway
 import sqlite3              # Для хранения лайков/дизлайков
+import logging
+
+
+# Включаем логирование Telebot
+logging.basicConfig(level=logging.INFO)      # Все INFO, WARNING и ERROR будут показываться
+telebot.logger.setLevel(logging.INFO)  
 
 # ----------------- TELEGRAM BOT -----------------
 TOKEN = '7772407762:AAHwJ0y5b-gcHZG6xd832_c2NyF98OY5m08'
@@ -142,3 +148,4 @@ flask_thread.daemon = True
 flask_thread.start()  # Flask запускается в отдельном потоке
 
 bot.infinity_polling(none_stop=True)  # Бот начинает работать и слушать сообщения
+
