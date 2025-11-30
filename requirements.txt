@@ -1,2 +1,2 @@
-pyTelegramBotAPI
-sqlite3-binary
+pyTelegramBotAPI==4.13.0
+Flask==2.3.6
