@@ -132,7 +132,8 @@ flask_thread.daemon = True
 flask_thread.start()
 
 
-bot.infinity_polling()
+bot.infinity_polling(none_stop=True)
+
 
 
 
