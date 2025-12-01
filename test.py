@@ -1,22 +1,13 @@
 import telebot              # Для работы с Telegram
 from telebot import types   # Для inline-кнопок
-import threading            # Чтобы запускать Telegram-бот и Flask одновременно
-from flask import Flask     # Мини-веб-сервер для Railway, чтобы процесс не убивался
-import os                   # Для получения порта Railway
 import sqlite3              # Для хранения лайков/дизлайков
-import logging
-
-
-# Включаем логирование Telebot
-logging.basicConfig(level=logging.INFO)      # Все INFO, WARNING и ERROR будут показываться
-telebot.logger.setLevel(logging.INFO)  
 
 # ----------------- TELEGRAM BOT -----------------
 TOKEN = '7772407762:AAHwJ0y5b-gcHZG6xd832_c2NyF98OY5m08'
 bot = telebot.TeleBot(TOKEN)
 
 # ----------------- SQLITE -----------------
-conn = sqlite3.connect('bot.db', check_same_thread=False)  # Подключаемся к базе данных SQLite
+conn = sqlite3.connect('bot.db', check_same_thread=False)
 cursor = conn.cursor()
 
 # Создаём таблицу стихов, если её нет
@@ -48,29 +39,24 @@ def start(message):
     btn1 = types.InlineKeyboardButton(text='Об авторе💭', callback_data="Autor")
     btn2 = types.InlineKeyboardButton(text='Стихи автора📜', callback_data="Poetry")
     keyboard.add(btn1, btn2)
-    bot.send_message(
-        message.chat.id, 
-        'Это бот Шульмина Егора. Тут будут его произведения и краткая история жизни', 
-        reply_markup=keyboard
-    )
+    bot.send_message(message.chat.id, 
+                     'Это бот Шульмина Егора. Тут будут его произведения и краткая история жизни', 
+                     reply_markup=keyboard)
 
 # ----------------- CALLBACK -----------------
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
     if call.data == 'Autor':
         bot.answer_callback_query(call.id)
-        bot.send_message(
-            call.message.chat.id,
-            'Шульми́н Егор Александрович родился 25 июля 2013 года в городе Хабаровск. '
-            'На данный момент живёт в селе Бриакан, р-на им. Полины Осипенко. '
-            'С ранних лет Егор умеет читать. Писать стихи начал в 9 лет. '
-            'Первые сочинения, к сожалению, не сохранились, поэтому он начал писать заново с конца 2024 года.'
-        )
+        bot.send_message(call.message.chat.id,
+                         'Шульми́н Егор Александрович родился 25 июля 2013 года в городе Хабаровск. '
+                         'На данный момент живёт в селе Бриакан, р-на им. Полины Осипенко. '
+                         'С ранних лет Егор умеет читать. Писать стихи начал в 9 лет. '
+                         'Первые сочинения, к сожалению, не сохранились, поэтому он начал писать заново с конца 2024 года.')
     elif call.data == 'Poetry':
         bot.answer_callback_query(call.id)
         markup = types.InlineKeyboardMarkup()
-
-        # Получаем количество лайков/дизлайков для каждой кнопки
+        # Получаем количество лайков/дизлайков
         cursor.execute("SELECT likes, dislikes FROM poems WHERE id = 1")
         l1,d1 = cursor.fetchone()
         cursor.execute("SELECT likes, dislikes FROM poems WHERE id = 2")
@@ -79,8 +65,7 @@ def callback(call):
         l3,d3 = cursor.fetchone()
         cursor.execute("SELECT likes, dislikes FROM poems WHERE id = 4")
         l4,d4 = cursor.fetchone()
-
-        # Кнопки с количеством лайков/дизлайков
+        # Создаём кнопки с количеством лайков/дизлайков
         p1 = types.InlineKeyboardButton(text=f'День учителя 👍{l1} 👎{d1}', callback_data="p1")
         p2 = types.InlineKeyboardButton(text=f'Крушение "Ан-24" 👍{l2} 👎{d2}', callback_data='p2')
         p3 = types.InlineKeyboardButton(text=f'Донбасс 👍{l3} 👎{d3}', callback_data='p3')
@@ -88,7 +73,6 @@ def callback(call):
         markup.add(p1,p2)
         markup.add(p3,p4)
         bot.send_message(call.message.chat.id, "Выберите стих", reply_markup=markup)
-
     elif call.data.startswith('p'):
         bot.answer_callback_query(call.id)
         poems_text = {
@@ -100,19 +84,15 @@ def callback(call):
         poem_id_map = {'p1':1,'p2':2,'p3':3,'p4':4}
         poem_id = poem_id_map[call.data]
         bot.send_message(call.message.chat.id, poems_text[call.data])
-
         # Кнопки лайк/дизлайк
         markup = types.InlineKeyboardMarkup()
         like_btn = types.InlineKeyboardButton("👍", callback_data=f"like_{poem_id}")
         dislike_btn = types.InlineKeyboardButton("👎", callback_data=f"dislike_{poem_id}")
         markup.add(like_btn, dislike_btn)
-
         # Показываем текущее количество лайков/дизлайков
         cursor.execute("SELECT likes, dislikes FROM poems WHERE id = ?", (poem_id,))
         likes, dislikes = cursor.fetchone()
         bot.send_message(call.message.chat.id, f"👍 {likes}   👎 {dislikes}", reply_markup=markup)
-
-    # Лайк/дизлайк кнопки
     elif call.data.startswith("like_"):
         poem_id = int(call.data.split("_")[1])
         cursor.execute("UPDATE poems SET likes = likes + 1 WHERE id = ?", (poem_id,))
@@ -121,7 +101,6 @@ def callback(call):
         cursor.execute("SELECT likes, dislikes FROM poems WHERE id = ?", (poem_id,))
         likes, dislikes = cursor.fetchone()
         bot.send_message(call.message.chat.id, f"👍 {likes}   👎 {dislikes}")
-
     elif call.data.startswith("dislike_"):
         poem_id = int(call.data.split("_")[1])
         cursor.execute("UPDATE poems SET dislikes = dislikes + 1 WHERE id = ?", (poem_id,))
@@ -131,21 +110,6 @@ def callback(call):
         likes, dislikes = cursor.fetchone()
         bot.send_message(call.message.chat.id, f"👍 {likes}   👎 {dislikes}")
 
-# ----------------- FLASK -----------------
-app = Flask(__name__)
-
-@app.route("/")
-def home():
-    return "Bot is alive!"  # Railway видит открытый порт
-
-def run_flask():
-    port = int(os.environ.get("PORT", 10000))  # Railway передаёт порт через переменную окружения
-    app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
-
-# ----------------- ЗАПУСК -----------------
-flask_thread = threading.Thread(target=run_flask)
-flask_thread.daemon = True
-flask_thread.start()  # Flask запускается в отдельном потоке
-
-bot.infinity_polling(none_stop=True)  # Бот начинает работать и слушать сообщения
-
+# ----------------- ЗАПУСК БОТА -----------------
+print("BOT STARTED...")
+bot.infinity_polling(skip_pending=True)  # Работаем бесконечно
